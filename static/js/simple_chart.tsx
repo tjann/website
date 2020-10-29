@@ -18,6 +18,7 @@ import React from "react";
 
 // Data structures
 import { DataPoint, DataGroup } from "./chart/base";
+import { updatePageLayoutState } from "./place/place";
 
 // Draws a d3 SVG chart in the passed-in ID
 import {
@@ -27,22 +28,13 @@ import {
   drawGroupBarChart,
 } from "./chart/draw";
 
-import { STATS_VAR_LABEL } from "./shared/stats_var_labels";
-
-// Handle sidebar
-import { updatePageLayoutState } from "./place/place";
-
 // Determines what chart
-import { chartTypeEnum, TrendData, SnapshotData } from "./place/types";
+import { chartTypeEnum } from "./place/types";
 import _ from "lodash";
 
 const CHART_HEIGHT = 194;
 
 interface SimpleChartPropType {
-  /**
-   * The place dcid.
-   */
-  dcid: string;
   /**
    * The svg dom element id.
    */
@@ -52,14 +44,6 @@ interface SimpleChartPropType {
    */
   title: string;
   /**
-   * Time series data
-   */
-  trend?: TrendData;
-  /**
-   * Snapshot data
-   */
-  snapshot?: SnapshotData;
-  /**
    * The chart type, could be line, single bar or group bar chart.
    */
   chartType: string;
@@ -67,63 +51,28 @@ interface SimpleChartPropType {
    * The unit of stat value
    */
   unit: string;
-  /**
-   * All place names
-   */
-  names: { [key: string]: string };
-  /**
-   * Scale number
-   */
-  scaling?: number;
-  /**
-   * All stats vars for this chart
-   */
-  statsVars: string[];
+
+  dataPoints?: DataPoint[];
+  dataGroups?: DataGroup[];
   /**
    * The topic of the page the chart is in
    */
   topic: string;
 }
 
-interface SimpleChartStateType {
-  dataPoints?: DataPoint[];
-  dataGroups?: DataGroup[];
-  elemWidth: number;
-  display: boolean;
-}
-
-class SimpleChart extends React.Component<
-  SimpleChartPropType,
-  SimpleChartStateType
-> {
+class SimpleChart extends React.Component<SimpleChartPropType> {
   chartElement: React.RefObject<HTMLDivElement>;
   svgContainerElement: React.RefObject<HTMLDivElement>;
-  dcid: string;
-  statsVars: string[];
 
   constructor(props: SimpleChartPropType) {
     super(props);
     this.chartElement = React.createRef();
     this.svgContainerElement = React.createRef();
-
-    this.state = {
-      display: true,
-      elemWidth: 0,
-    };
-    // Consider debouncing / throttling this if it gets expensive at
-    // small screen sizes
-    this._handleWindowResize = this._handleWindowResize.bind(this);
+    this.state = { foo: new Date() };
   }
 
   render(): JSX.Element {
-    if (!this.state.display) {
-      return null;
-    }
     const dateString = this.getDateString();
-    const sources = this.getSources();
-    if (!sources) {
-      return null;
-    }
     return (
       <div className="col">
         <div className="chart-container" ref={this.chartElement}>
@@ -137,9 +86,6 @@ class SimpleChart extends React.Component<
             className="svg-container"
           ></div>
         </div>
-        <a className="feedback" href="/feedback">
-          Feedback
-        </a>
       </div>
     );
   }
@@ -151,42 +97,24 @@ class SimpleChart extends React.Component<
     } catch (e) {
       return;
     }
-    updatePageLayoutState();
-  }
-
-  componentWillUnmount(): void {
-    window.removeEventListener("resize", this._handleWindowResize);
   }
 
   componentDidMount(): void {
-    window.addEventListener("resize", this._handleWindowResize);
-    this.processData();
-  }
-
-  private _handleWindowResize(): void {
-    const svgElement = this.svgContainerElement.current;
-    if (!svgElement) {
-      return;
-    }
-    // SimpleChart resizes at bootstrap breakpoints
-    const width = this.svgContainerElement.current.offsetWidth;
-    if (width !== this.state.elemWidth) {
-      this.setState({
-        elemWidth: width,
-      });
-    }
+    this.fooIncrement();
   }
 
   drawSimpleChart(): void {
     const chartType = this.props.chartType;
     const elem = document.getElementById(this.props.id);
+    console.log("drawing chart for ");
+    console.log(this.props.id);
     elem.innerHTML = "";
     if (chartType === chartTypeEnum.LINE) {
       const isCompleteLine = drawLineChart(
         this.props.id,
         elem.offsetWidth,
         CHART_HEIGHT,
-        this.state.dataGroups,
+        this.props.dataGroups,
         this.props.unit
       );
       if (!isCompleteLine) {
@@ -199,7 +127,7 @@ class SimpleChart extends React.Component<
         this.props.id,
         elem.offsetWidth,
         CHART_HEIGHT,
-        this.state.dataPoints,
+        this.props.dataPoints,
         this.props.unit
       );
     } else if (chartType === chartTypeEnum.STACK_BAR) {
@@ -207,7 +135,7 @@ class SimpleChart extends React.Component<
         this.props.id,
         elem.offsetWidth,
         CHART_HEIGHT,
-        this.state.dataGroups,
+        this.props.dataGroups,
         this.props.unit
       );
     } else if (chartType === chartTypeEnum.GROUP_BAR) {
@@ -215,115 +143,20 @@ class SimpleChart extends React.Component<
         this.props.id,
         elem.offsetWidth,
         CHART_HEIGHT,
-        this.state.dataGroups,
+        this.props.dataGroups,
         this.props.unit
       );
     }
   }
 
-  private expandDataPoints(
-    dataPoints: DataPoint[],
-    dates: Set<string>
-  ): DataPoint[] {
-    const result: DataPoint[] = dataPoints;
-    for (const dp of dataPoints) {
-      if (dates.has(dp.label)) {
-        dates.delete(dp.label);
-      }
-    }
-    dates.forEach((date) => {
-      result.push({ label: date, value: null });
+  private fooIncrement(): void {
+    this.setState({
+      foo: new Date(),
     });
-
-    result.sort(function (a, b) {
-      return a.label > b.label ? -1 : 1;
-    });
-    return result;
-  }
-
-  private processData(): void {
-    const dataGroups: DataGroup[] = [];
-    const dataPoints: DataPoint[] = [];
-    const allDates = new Set<string>();
-    const scaling = this.props.scaling ? this.props.scaling : 1;
-    const linkSuffix =
-      this.props.topic === "Overview" ? "" : "?topic=" + this.props.topic;
-    switch (this.props.chartType) {
-      case chartTypeEnum.LINE:
-        for (const statVar in this.props.trend.series) {
-          const dataPoints: DataPoint[] = [];
-          for (const date in this.props.trend.series[statVar]) {
-            allDates.add(date);
-            dataPoints.push({
-              label: date,
-              value: this.props.trend.series[statVar][date] * scaling,
-            });
-          }
-          dataGroups.push(new DataGroup(STATS_VAR_LABEL[statVar], dataPoints));
-        }
-        for (let i = 0; i < dataGroups.length; i++) {
-          dataGroups[i].value = this.expandDataPoints(
-            dataGroups[i].value,
-            allDates
-          );
-        }
-        this.setState({
-          dataGroups,
-        });
-        break;
-      case chartTypeEnum.SINGLE_BAR:
-        {
-          const snapshotData = this.props.snapshot.data[0];
-          for (const statVar in snapshotData.data) {
-            dataPoints.push({
-              label: STATS_VAR_LABEL[statVar],
-              value: snapshotData.data[statVar] * scaling,
-              dcid: snapshotData.dcid,
-            });
-          }
-        }
-        this.setState({
-          dataPoints,
-        });
-        break;
-      case chartTypeEnum.GROUP_BAR:
-      // Fall-through
-      case chartTypeEnum.STACK_BAR:
-        for (const placeData of this.props.snapshot.data) {
-          const dataPoints: DataPoint[] = [];
-          for (const statVar of this.statsVars) {
-            const val = placeData.data[statVar];
-            dataPoints.push({
-              label: STATS_VAR_LABEL[statVar],
-              value: val ? val * scaling : null,
-              dcid: placeData.dcid,
-            });
-          }
-          dataGroups.push(
-            new DataGroup(
-              this.props.names[placeData.dcid],
-              dataPoints,
-              `/place/${placeData.dcid}${linkSuffix}`
-            )
-          );
-        }
-        this.setState({
-          dataGroups: dataGroups,
-        });
-        break;
-      default:
-        break;
-    }
-  }
-
-  private getSources(): string[] {
-    return this.props.trend
-      ? this.props.trend.sources
-      : this.props.snapshot.sources;
   }
 
   private getDateString(): string {
-    return this.props.snapshot ? "(" + this.props.snapshot.date + ")" : "";
+    return "YYYY-MM-DD";
   }
 }
 

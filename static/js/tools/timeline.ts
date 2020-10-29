@@ -25,6 +25,6 @@ import { Page } from "./timeline_page";
 window.onload = () => {
   ReactDOM.render(
     React.createElement(Page),
-    document.getElementById("main-pane")
+    document.getElementById("charts-container")
   );
 };

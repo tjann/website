@@ -22,6 +22,7 @@ import {
   CachedChoroplethData,
   GeoJsonData,
 } from "../chart/types";
+import { Trans } from "react-i18next";
 
 interface MainPanePropType {
   /**
@@ -96,13 +97,26 @@ class MainPane extends React.Component<MainPanePropType> {
                 <a href={`/place/${this.props.dcid}?topic=${topic}`}>{topic}</a>
                 <span className="more">
                   <a href={`/place/${this.props.dcid}?topic=${topic}`}>
-                    More charts ›
+                    <Trans
+                      ns="place"
+                      i18nKey="more_charts"
+                      description="A link to see more charts about a statistical vertical such as Demographics or Health."
+                    >
+                      More charts ›
+                    </Trans>
                   </a>
                 </span>
               </h3>
             );
           } else {
-            subtopicHeader = <h3 id={topic}>{topic}</h3>;
+            // Translate these via chart config.
+            subtopicHeader = (
+              <h3 id={topic}>
+                <Trans i18nKey="skip:topic" description="Ignore this entry.">
+                  {topic}
+                </Trans>
+              </h3>
+            );
           }
           return (
             <section className="subtopic col-12" key={topic}>

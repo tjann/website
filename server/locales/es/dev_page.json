@@ -14,7 +14,10 @@
   "November": "Noviembre",
   "December": "Diciembre",
   "Total": "Total",
-  "Male": "Masculino",
+  "Male": {
+    "message": "Masculino",
+    "description": "A link to see more charts about a statistical vertical such as Demographics or Health."
+  },
   "San Jose": "San Jose",
   "Fremont": "Fremont",
   "San Francisco": "San Francisco",

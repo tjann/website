@@ -1,0 +1,10 @@
+{
+  "more_charts": {
+    "message": "More charts ›",
+    "description": "hello"
+  },
+  "{topic}": {
+    "message": "{topic}",
+    "description": ""
+  }
+}

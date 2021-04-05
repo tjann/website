@@ -21,12 +21,12 @@ source .env/bin/activate
 export GOOGLE_CLOUD_PROJECT=datcom-website-staging
 if [[ $1 == "lite" ]]
 then
-  export FLASK_ENV=local-lite
+  export FLASK_ENV=development-lite
 elif [[ $1 == "svobs" ]]
 then
-  export FLASK_ENV=local-svobs
+  export FLASK_ENV=development-svobs
 else
-  export FLASK_ENV=local
+  export FLASK_ENV=development
 fi
 
 pip3 install -r server/requirements.txt -q

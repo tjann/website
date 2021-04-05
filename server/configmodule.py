@@ -9,7 +9,7 @@ import os
 class Config:
     TEST = False
     WEBDRIVER = False
-    LOCAL = False
+    DEVELOPMENT = False
     LITE = False
     # Use StatVarObs instead of PopObs data model.
     # TODO(shifucun): change this to True after setting svobs_mode=true in mixer
@@ -43,33 +43,29 @@ class SvObsConfig(Config):
     SVOBS = True
 
 
-class DevConfig(Config):
-    SVOBS = True
-
-
 class MinikubeConfig(Config):
-    LOCAL = True
+    DEVELOPMENT = True
     SCHEME = 'http'
 
 
-class LocalConfig(Config):
-    LOCAL = True
+class DevelopmentConfig(Config):
+    DEVELOPMENT = True
     SECRET_PROJECT = 'datcom-website-dev'
     API_ROOT = 'https://autopush.api.datacommons.org'
     GCS_BUCKET = 'datcom-website-autopush-resources'
     SCHEME = 'http'
 
 
-class LocalLiteConfig(Config):
-    LOCAL = True
+class DevelopmentLiteConfig(Config):
+    DEVELOPMENT = True
     LITE = True
     API_ROOT = 'https://autopush.api.datacommons.org'
     SCHEME = 'http'
 
 
-class LocalSvObsConfig(Config):
+class DevelopmentSvObsConfig(Config):
     SVOBS = True
-    LOCAL = True
+    DEVELOPMENT = True
     SECRET_PROJECT = 'datcom-website-statvar-migrate'
     API_ROOT = 'https://mixer.endpoints.datcom-mixer-statvar.cloud.goog'
     GCS_BUCKET = 'datcom-website-statvar-migrate-resources'
